@@ -1,33 +1,27 @@
-import time
-import matplotlib.pyplot as plt
 import pandas as pd
 from mlxtend.preprocessing import TransactionEncoder
-from prepare import download_and_prepare_dataset
+from mlxtend.frequent_patterns import apriori
 
+# Read in the dataset
+df = pd.read_csv("adult_dataset.csv")
 
-def main():
-    # Download and prepare the dataset
-    transactions = download_and_prepare_dataset(
-        "datasets/chess", "http://archive.ics.uci.edu/ml/machine-learning-databases/chess/king-rook-vs-king-pawn/kr-vs-kp.data", "krkp.data")
+# Preprocess the data by converting categorical variables into numerical ones
+df = pd.get_dummies(df)
 
-    # Encode the transactions as a boolean matrix
-    te = TransactionEncoder()
-    matrix = te.fit_transform(transactions)
+# Convert the data into a list of transactions
+transactions = []
+for row in df.iterrows():
+    transactions.append(list(row[1]))
 
-    # Create a Pandas DataFrame from the encoded matrix
-    df = pd.DataFrame(matrix, columns=te.columns_)
+# Encode the transactions using the TransactionEncoder
+te = TransactionEncoder()
+te_ary = te.fit(transactions).transform(transactions)
 
-    # Create a table showing the frequency of each item
-    item_counts = df.sum().sort_values(ascending=False)
-    print(item_counts)
+# Convert the encoded transactions into a DataFrame
+df = pd.DataFrame(te_ary, columns=te.columns_)
 
-    # Create a bar plot showing the frequency of the top 10 items
-    item_counts[:10].plot.bar()
-    plt.xlabel("Item")
-    plt.ylabel("Frequency")
-    plt.title("Frequency of Top 10 Items")
-    plt.show()
+# Run the apriori algorithm to find frequent itemsets
+frequent_itemsets = apriori(df, min_support=0.5, use_colnames=True)
 
-
-if __name__ == "__main__":
-    main()
+# Print the frequent itemsets
+print(frequent_itemsets)
